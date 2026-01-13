@@ -401,6 +401,54 @@
         }
       }
     },
+    "doppler@latest": {
+      "last_modified": "2025-12-31T03:27:36Z",
+      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#doppler",
+      "source": "devbox-search",
+      "version": "3.75.1",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hlbl09qj3slgfbshlp5hy0lkdnkwkygy-doppler-3.75.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hlbl09qj3slgfbshlp5hy0lkdnkwkygy-doppler-3.75.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/g011lmzy5qb7zkjvzhhc2g8cg0yqf2fd-doppler-3.75.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/g011lmzy5qb7zkjvzhhc2g8cg0yqf2fd-doppler-3.75.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/7s927aqbj1ss0hgylf5kv6nv0x9z8jg4-doppler-3.75.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/7s927aqbj1ss0hgylf5kv6nv0x9z8jg4-doppler-3.75.1"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hsqi8b6qwbk49fz3ckw14mz1n24fx23a-doppler-3.75.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hsqi8b6qwbk49fz3ckw14mz1n24fx23a-doppler-3.75.1"
+        }
+      }
+    },
     "gh@latest": {
       "last_modified": "2025-12-31T03:27:36Z",
       "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#gh",
@@ -690,34 +738,6 @@
             }
           ],
           "store_path": "/nix/store/z34vcsv6x83d2iqdjf0kiaq99y1qq3nr-goreleaser-2.13.0"
-        }
-      }
-    },
-    "helm@latest": {
-      "last_modified": "2025-12-31T03:27:36Z",
-      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#helm",
-      "source": "devbox-search",
-      "version": "0.9.0",
-      "systems": {
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/2v1q0sradp4l4pjnq4yg7v86mayraw0i-helm-0.9.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/2v1q0sradp4l4pjnq4yg7v86mayraw0i-helm-0.9.0"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/kfnx0qx7lh4yd2mx7ii1zxp2zm0q5axb-helm-0.9.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/kfnx0qx7lh4yd2mx7ii1zxp2zm0q5axb-helm-0.9.0"
         }
       }
     },

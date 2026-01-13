@@ -14,7 +14,6 @@
     "goreleaser@latest",
     "delve@latest",
     "kubectl@latest",
-    "helm@latest",
     "kind@latest",
     "docker@latest",
     "terraform@latest",
