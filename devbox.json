@@ -1,0 +1,36 @@
+{
+  "packages": [
+    "claude-code@latest",
+    "doppler@latest",
+    "gh@latest",
+    "git-lfs@latest",
+    "ripgrep@latest",
+    "tree@latest",
+    "curl@latest",
+    "jq@latest",
+    "go@latest",
+    "golangci-lint@latest",
+    "gofumpt@latest",
+    "goreleaser@latest",
+    "delve@latest",
+    "kubectl@latest",
+    "helm@latest",
+    "kind@latest",
+    "docker@latest",
+    "terraform@latest",
+    "yq-go@latest",
+    "kustomize@latest",
+    "k9s@latest",
+    "stern@latest",
+    "crane@latest",
+    "dive@latest",
+    "skopeo@latest"
+  ],
+
+  "shell": {
+    "init_hook": [
+      "echo 'Cloudflare Provider Development Environment'",
+      "echo ''"
+    ]
+  }
+}
