@@ -1,0 +1,12 @@
+provider-cloudflare
+
+Copyright 2022 The Crossplane Authors
+Copyright 2022+ Contributors to the provider-cloudflare project
+
+This project incorporates components from the following third-party works:
+
+- Terraform Provider Cloudflare (https://github.com/cloudflare/terraform-provider-cloudflare),
+  licensed under the Mozilla Public License 2.0 (MPL 2.0).
+
+See the LICENSE file in this repository for the license under which provider-cloudflare
+is distributed.

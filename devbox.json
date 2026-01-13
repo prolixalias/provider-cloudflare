@@ -1,0 +1,51 @@
+{
+  "packages": [
+    "coreutils@latest",
+    "crane@latest",
+    "delve@latest",
+    "dive@latest",
+    "docker@latest",
+    "doppler@latest",
+    "dos2unix@latest",
+    "gcc@latest",
+    "gh@latest",
+    "git-lfs@latest",
+    "gnugrep@latest",
+    "gnumake@latest",
+    "gnused@latest",
+    "gnutar@latest",
+    "go@latest",
+    "gofumpt@latest",
+    "golangci-lint@latest",
+    "goreleaser@latest",
+    "gotools@latest",
+    "jq@latest",
+    "k9s@latest",
+    "kubectl@latest",
+    "kustomize@latest",
+    "ripgrep@latest",
+    "skopeo@latest",
+    "stern@latest",
+    "tree@latest",
+    "yq-go@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Cloudflare Provider Development Environment'",
+      "echo ''"
+    ],
+    "scripts": {
+      "generate": "make submodules && make generate",
+      "lint": "make submodules && make generate && make lint",
+      "build": "make submodules && make generate && make lint && make build.init && make build.check && make build.code && make do.build.platform",
+      "build-image": "make submodules && make generate && make lint && make build",
+      "build-publish": "make submodules && make generate && make lint && make build && make publish",
+      "test-ci": "bash scripts/test-ci-local.sh",
+      "test-ci-quick": "bash scripts/test-ci-local.sh --quick"
+    }
+  },
+  "env": {
+    "GO111MODULE": "on",
+    "GOPATH": "$HOME/go"
+  }
+}

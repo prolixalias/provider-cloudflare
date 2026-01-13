@@ -1,0 +1,19 @@
+version: "2"
+
+linters:
+  # gosimple and unused were merged into staticcheck in golangci-lint v2
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+
+linters-settings:
+  govet:
+    disable:
+      - composites
+
+issues:
+  exclude-dirs:
+    - vendor
+    - .work
