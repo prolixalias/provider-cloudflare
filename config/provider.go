@@ -6,8 +6,7 @@ import (
 
 	ujconfig "github.com/crossplane/upjet/v2/pkg/config"
 
-	// Resource group configurations will be added here
-	// e.g., "github.com/prolixalias/provider-cloudflare/config/zone"
+	"github.com/prolixalias/provider-cloudflare/config/address"
 )
 
 const (
@@ -33,8 +32,7 @@ func GetProvider() *ujconfig.Provider {
 		))
 
 	for _, configure := range []func(provider *ujconfig.Provider){
-		// Resource group Configure functions will be added here
-		// e.g., zone.Configure, dns.Configure, worker.Configure
+		address.Configure,
 	} {
 		configure(pc)
 	}
@@ -58,7 +56,7 @@ func GetProviderNamespaced() *ujconfig.Provider {
 		}))
 
 	for _, configure := range []func(provider *ujconfig.Provider){
-		// Resource group Configure functions will be added here
+		address.Configure,
 	} {
 		configure(pc)
 	}
