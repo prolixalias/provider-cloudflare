@@ -11,7 +11,7 @@ on:
 env:
   # Common versions
   GO_VERSION: '1.25'
-  GOLANGCI_VERSION: 'v1.62.2'
+  GOLANGCI_VERSION: 'v2.1.4'
   DOCKER_BUILDX_VERSION: 'v0.30.1'
 
 jobs:
