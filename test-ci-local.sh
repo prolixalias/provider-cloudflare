@@ -33,8 +33,8 @@ make generate
 echo "📦 Testing vendor dependencies..."
 make vendor vendor.check
 
-echo "🔍 Testing linting (quick check on main files)..."
-golangci-lint run --timeout=30s cmd/provider/main.go || echo "⚠️  Linting found issues - check CI for details"
+echo "🔍 Testing linting with auto-fix..."
+golangci-lint run --fix
 
 echo "✅ All CI steps passed locally!"
 echo ""

@@ -1,6 +1,8 @@
 # ====================================================================================
 # Setup Project
 
+VERSION ?= v0.0.0
+
 PROJECT_NAME ?= provider-cloudflare
 PROJECT_REPO ?= github.com/prolixalias/$(PROJECT_NAME)
 
