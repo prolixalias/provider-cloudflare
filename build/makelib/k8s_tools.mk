@@ -161,7 +161,7 @@ $(KUTTL):
 # uptest download and install
 $(UPTEST):
 	@$(INFO) installing uptest $(UPTEST)
-	@curl -fsSLo $(UPTEST) https://github.com/upbound/uptest/releases/download/$(UPTEST_VERSION)/uptest_$(SAFEHOSTPLATFORM) || $(FAIL)
+	@curl -fsSLo $(UPTEST) https://github.com/crossplane/uptest/releases/download/$(UPTEST_VERSION)/uptest_$(SAFEHOSTPLATFORM) || $(FAIL)
 	@chmod +x $(UPTEST)
 	@$(OK) installing uptest $(UPTEST)
 
