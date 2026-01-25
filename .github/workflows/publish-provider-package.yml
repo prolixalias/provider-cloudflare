@@ -1,7 +1,10 @@
 name: Publish Provider Package
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches:
       - main
   pull_request:
@@ -20,6 +23,7 @@ on:
 
 jobs:
   publish-provider-package:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     uses: crossplane-contrib/provider-workflows/.github/workflows/publish-provider.yml@main
     with:
       repository: provider-cloudflare

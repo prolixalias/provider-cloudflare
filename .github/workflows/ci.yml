@@ -90,6 +90,9 @@ jobs:
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
+      - name: Generate Code
+        run: make generate
+
       - name: Vendor Dependencies
         run: make vendor vendor.check
 
@@ -137,6 +140,9 @@ jobs:
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
+      - name: Generate Code
+        run: make generate
+
       - name: Vendor Dependencies
         run: make vendor vendor.check
 
@@ -179,6 +185,9 @@ jobs:
           path: .work/pkg
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Generate Code
+        run: make generate
 
       - name: Vendor Dependencies
         run: make vendor vendor.check
@@ -228,6 +237,9 @@ jobs:
           path: .work/pkg
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Generate Code
+        run: make generate
 
       - name: Vendor Dependencies
         run: make vendor vendor.check
