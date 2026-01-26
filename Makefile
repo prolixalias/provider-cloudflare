@@ -213,8 +213,14 @@ uptest-render: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
 
 local-deploy: local.xpkg.deploy.provider.$(PROJECT_NAME)
 	@$(INFO) running locally built provider
-	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Healthy --timeout 5m
-	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Installed --timeout 5m
+	@$(INFO) waiting for provider to become healthy...
+	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Healthy --timeout 10m || \
+		(echo "Provider failed to become healthy. Checking status:"; \
+		$(KUBECTL) get provider.pkg $(PROJECT_NAME) -o yaml; \
+		echo "Provider pod logs:"; \
+		$(KUBECTL) -n crossplane-system logs -l pkg.crossplane.io/provider=$(PROJECT_NAME) --tail=50 || true; \
+		exit 1)
+	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Installed --timeout 2m
 	@$(OK) running locally built provider
 
 # ====================================================================================
