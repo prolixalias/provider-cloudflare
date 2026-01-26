@@ -32,7 +32,7 @@ jobs:
 
   report-breaking-changes:
     runs-on: ubuntu-24.04
-    env:\n      LOCAL_XPKG_BUILD: true\n    needs: detect-noop
+    needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
     steps:
       - name: Checkout
