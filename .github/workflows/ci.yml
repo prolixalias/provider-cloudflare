@@ -257,6 +257,9 @@ jobs:
       - name: Vendor Dependencies
         run: make vendor vendor.check
 
+      - name: Build Provider Artifacts
+        run: make build
+
       - name: Create Kind Cluster
         run: kind create cluster --name local-dev
 
