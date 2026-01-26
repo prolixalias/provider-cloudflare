@@ -48,6 +48,7 @@ jobs:
             package/crds/**
       - name: Report breaking CRD OpenAPI v3 schema changes
         if: steps.modified-crds.outputs.any_changed == 'true'
+        env:
           MODIFIED_CRD_LIST: ${{ steps.modified-crds.outputs.all_changed_files }}
         run: |
           make crddiff
