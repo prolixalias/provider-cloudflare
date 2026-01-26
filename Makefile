@@ -108,6 +108,12 @@ xpkg.build.provider-cloudflare: do.build.images
 # build steps in parallel to avoid encountering an installation race condition.
 build.init: $(UP) $(CROSSPLANE_CLI) check-terraform-version
 
+# Post-generation hook to fix CEL validation errors for dynamic fields
+generate.done:
+	@$(INFO) Fixing CRD validation rules for dynamic fields
+	@./hack/fix-crds.sh
+	@$(OK) CRD validation rules fixed
+
 # ====================================================================================
 # Setup Terraform for fetching provider schema
 TERRAFORM := $(TOOLS_HOST_DIR)/terraform-$(TERRAFORM_VERSION)
@@ -207,6 +213,34 @@ uptest: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
 	@$(OK) running automated tests
 
 uptest-render: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
+	@$(INFO) rendering manifests
+	@UPTEST_EXAMPLE_LIST="$(UPTEST_EXAMPLE_LIST)" DATASOURCE_PATH="$(UPTEST_DATASOURCE_PATH)" CLOUD_CREDENTIALS="$(UPTEST_CLOUD_CREDENTIALS)" $(UPTEST) manifests render --setup-script=cluster/test/setup.sh --default-timeout=30m --data-source=cluster/test/datasource.yaml || $(FAIL)
+	@$(OK) rendering manifests
+
+crddiff: $(UPTEST)
+	@$(INFO) Checking breaking CRD schema changes
+	@for crd in $${MODIFIED_CRD_LIST}; do \
+		if ! git cat-file -e "$${GITHUB_BASE_REF}:$${crd}" 2>/dev/null; then \
+			echo "CRD $${crd} does not exist in the $${GITHUB_BASE_REF} branch. Skipping..." ; \
+			continue ; \
+		fi ; \
+		echo "Checking $${crd} for breaking API changes..." ; \
+		changes_detected=$$(go run github.com/crossplane/uptest/cmd/crddiff@$(CRDDIFF_VERSION) revision --enable-upjet-extensions <(git cat-file -p "$${GITHUB_BASE_REF}:$${crd}") "$${crd}" 2>&1) ; \
+		if [[ $$? != 0 ]] ; then \
+			printf "\033[31m"; echo "Breaking change detected!"; printf "\033[0m" ; \
+			echo "$${changes_detected}" ; \
+			echo ; \
+		fi ; \
+	done
+	@$(OK) Checking breaking CRD schema changes
+
+schema-version-diff:
+	@$(INFO) Checking for native state schema version changes
+	@$(FAIL) Not implemented yet
+
+e2e: local-deploy uptest
+
+uptest-render-old: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
 	@$(INFO) rendering manifests
 	@UPTEST_EXAMPLE_LIST="$(UPTEST_EXAMPLE_LIST)" DATASOURCE_PATH="$(UPTEST_DATASOURCE_PATH)" CLOUD_CREDENTIALS="$(UPTEST_CLOUD_CREDENTIALS)" $(UPTEST) manifests render --setup-script=cluster/test/setup.sh --default-timeout=30m --data-source=cluster/test/datasource.yaml || $(FAIL)
 	@$(OK) rendering manifests
