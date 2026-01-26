@@ -7,6 +7,7 @@ package v1beta1
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/v2/apis/common/v1"
 )
@@ -33,7 +34,10 @@ func (p *ProviderConfigUsage) SetResourceReference(r xpv1.TypedReference) {
 
 // GetObjectKind returns the GroupVersionKind of the ProviderConfigUsage
 func (p *ProviderConfigUsage) GetObjectKind() schema.ObjectKind {
-	return ProviderConfigUsageGroupVersionKind
+	return &metav1.TypeMeta{
+		APIVersion: ProviderConfigUsageGroupVersionKind.GroupVersion().String(),
+		Kind:       ProviderConfigUsageGroupVersionKind.Kind,
+	}
 }
 
 // GetItems returns the list of ProviderConfigUsage as runtime.Object
@@ -47,5 +51,8 @@ func (l *ProviderConfigUsageList) GetItems() []runtime.Object {
 
 // GetObjectKind returns the GroupVersionKind of the ProviderConfigUsageList
 func (l *ProviderConfigUsageList) GetObjectKind() schema.ObjectKind {
-	return ProviderConfigUsageListGroupVersionKind
+	return &metav1.TypeMeta{
+		APIVersion: ProviderConfigUsageListGroupVersionKind.GroupVersion().String(),
+		Kind:       ProviderConfigUsageListGroupVersionKind.Kind,
+	}
 }
