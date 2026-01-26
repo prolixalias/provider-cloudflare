@@ -32,7 +32,7 @@ func (p *ProviderConfigUsage) SetResourceReference(r xpv1.TypedReference) {
 }
 
 // GetObjectKind returns the GroupVersionKind of the ProviderConfigUsage
-func (p *ProviderConfigUsage) GetObjectKind() schema.GroupVersionKind {
+func (p *ProviderConfigUsage) GetObjectKind() schema.ObjectKind {
 	return ProviderConfigUsageGroupVersionKind
 }
 
@@ -46,6 +46,6 @@ func (l *ProviderConfigUsageList) GetItems() []runtime.Object {
 }
 
 // GetObjectKind returns the GroupVersionKind of the ProviderConfigUsageList
-func (l *ProviderConfigUsageList) GetObjectKind() schema.GroupVersionKind {
+func (l *ProviderConfigUsageList) GetObjectKind() schema.ObjectKind {
 	return ProviderConfigUsageListGroupVersionKind
 }
