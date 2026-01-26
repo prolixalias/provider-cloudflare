@@ -213,6 +213,9 @@ jobs:
       LOCAL_XPKG_BUILD: true
     needs:
       - detect-noop
+      - report-breaking-changes
+      - lint
+      - check-diff
       - unit-tests
     if: needs.detect-noop.outputs.noop != 'true'
 
