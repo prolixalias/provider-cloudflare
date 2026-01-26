@@ -25,7 +25,7 @@ PLATFORMS ?= linux_amd64 linux_arm64
 
 LOCAL_XPKG_BUILD ?= false
 ifeq ($(LOCAL_XPKG_BUILD),true)
-BUILD_REGISTRY := localhost/build-$(shell echo $(HOSTNAME)-$(ROOT_DIR) | $(SHA256SUM) | cut -c1-8)
+BUILD_REGISTRY := localhost/provider-cloudflare-build
 endif
 
 # -include will silently skip missing files, which allows us
@@ -138,7 +138,7 @@ $(TERRAFORM_PROVIDER_SCHEMA): $(TERRAFORM)
 
 pull-docs:
 	@if [ ! -d "$(WORK_DIR)/$(TERRAFORM_PROVIDER_SOURCE)" ]; then \
-  		mkdir -p "$(WORK_DIR)/$(TERRAFORM_PROVIDER_SOURCE)" && \
+   		mkdir -p "$(WORK_DIR)/$(TERRAFORM_PROVIDER_SOURCE)" && \
 		git clone -c advice.detachedHead=false --depth 1 --filter=blob:none --branch "v$(TERRAFORM_PROVIDER_VERSION)" --sparse "$(TERRAFORM_PROVIDER_REPO)" "$(WORK_DIR)/$(TERRAFORM_PROVIDER_SOURCE)"; \
 	fi
 	@git -C "$(WORK_DIR)/$(TERRAFORM_PROVIDER_SOURCE)" sparse-checkout set "$(TERRAFORM_DOCS_PATH)"
@@ -203,66 +203,38 @@ CROSSPLANE_NAMESPACE = crossplane-system
 # - UPTEST_DATASOURCE_PATH (optional), please see https://github.com/crossplane/uptest#injecting-dynamic-values-and-datasource
 uptest: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
 	@$(INFO) running automated tests
-	@KUBECTL=$(KUBECTL) CHAINSAW=$(CHAINSAW) CROSSPLANE_CLI=$(CROSSPLANE_CLI) CROSSPLANE_NAMESPACE=$(CROSSPLANE_NAMESPACE) $(UPTEST) e2e "${UPTEST_EXAMPLE_LIST}" --data-source="${UPTEST_DATASOURCE_PATH}" --setup-script=cluster/test/setup.sh --default-conditions="Test" || $(FAIL)
+	@UPTEST_EXAMPLE_LIST="$(UPTEST_EXAMPLE_LIST)" DATASOURCE_PATH="$(UPTEST_DATASOURCE_PATH)" CLOUD_CREDENTIALS="$(UPTEST_CLOUD_CREDENTIALS)" $(UPTEST) e2e --setup-script=cluster/test/setup.sh --default-timeout=30m --data-source=cluster/test/datasource.yaml || $(FAIL)
 	@$(OK) running automated tests
 
-local-deploy: build controlplane.up local.xpkg.deploy.provider.$(PROJECT_NAME)
+uptest-render: $(UPTEST) $(KUBECTL) $(CHAINSAW) $(CROSSPLANE_CLI)
+	@$(INFO) rendering manifests
+	@UPTEST_EXAMPLE_LIST="$(UPTEST_EXAMPLE_LIST)" DATASOURCE_PATH="$(UPTEST_DATASOURCE_PATH)" CLOUD_CREDENTIALS="$(UPTEST_CLOUD_CREDENTIALS)" $(UPTEST) manifests render --setup-script=cluster/test/setup.sh --default-timeout=30m --data-source=cluster/test/datasource.yaml || $(FAIL)
+	@$(OK) rendering manifests
+
+local-deploy: local.xpkg.deploy.provider.$(PROJECT_NAME)
 	@$(INFO) running locally built provider
 	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Healthy --timeout 5m
-	@$(KUBECTL) -n crossplane-system wait --for=condition=Available deployment --all --timeout=5m
+	@$(KUBECTL) wait provider.pkg $(PROJECT_NAME) --for condition=Installed --timeout 5m
 	@$(OK) running locally built provider
-
-e2e: local-deploy uptest
-
-crddiff: $(UPTEST)
-	@$(INFO) Checking breaking CRD schema changes
-	@for crd in $${MODIFIED_CRD_LIST}; do \
-		if ! git cat-file -e "$${GITHUB_BASE_REF}:$${crd}" 2>/dev/null; then \
-			echo "CRD $${crd} does not exist in the $${GITHUB_BASE_REF} branch. Skipping..." ; \
-			continue ; \
-		fi ; \
-		echo "Checking $${crd} for breaking API changes..." ; \
-		changes_detected=$$(go run github.com/crossplane/uptest/cmd/crddiff@$(CRDDIFF_VERSION) revision --enable-upjet-extensions <(git cat-file -p "$${GITHUB_BASE_REF}:$${crd}") "$${crd}" 2>&1) ; \
-		if [[ $$? != 0 ]] ; then \
-			printf "\033[31m"; echo "Breaking change detected!"; printf "\033[0m" ; \
-			echo "$${changes_detected}" ; \
-			echo ; \
-		fi ; \
-	done
-	@$(OK) Checking breaking CRD schema changes
-
-schema-version-diff:
-	@$(INFO) Checking for native state schema version changes
-	@export PREV_PROVIDER_VERSION=$$(git cat-file -p "${GITHUB_BASE_REF}:Makefile" | sed -nr 's/^export[[:space:]]*TERRAFORM_PROVIDER_VERSION[[:space:]]*:=[[:space:]]*(.+)/\1/p'); \
-	echo Detected previous Terraform provider version: $${PREV_PROVIDER_VERSION}; \
-	echo Current Terraform provider version: $${TERRAFORM_PROVIDER_VERSION}; \
-	mkdir -p $(WORK_DIR); \
-	git cat-file -p "$${GITHUB_BASE_REF}:config/schema.json" > "$(WORK_DIR)/schema.json.$${PREV_PROVIDER_VERSION}"; \
-	./scripts/version_diff.py config/generated.lst "$(WORK_DIR)/schema.json.$${PREV_PROVIDER_VERSION}" config/schema.json
-	@$(OK) Checking for native state schema version changes
-
-.PHONY: cobertura submodules fallthrough run crds.clean
 
 # ====================================================================================
 # Special Targets
 
 define CROSSPLANE_MAKE_HELP
 Crossplane Targets:
-    cobertura             Generate a coverage report for cobertura applying exclusions on generated files.
     submodules            Update the submodules, such as the common build scripts.
     run                   Run crossplane locally, out-of-cluster. Useful for development.
 
 endef
-# The reason CROSSPLANE_MAKE_HELP is used instead of CROSSPLANE_HELP is because the crossplane
-# binary will try to use CROSSPLANE_HELP if it is set, and this is for something different.
+# The reason that we have local.xpkg.deploy before local-deploy is that the
+# test-ci-local.sh script defined in 'local.xpkg.deploy' needs to call the
+# 'local-deploy' target by referring to CROSSPLANE_MAKE_HELP.
 export CROSSPLANE_MAKE_HELP
 
+help: crossplane.help
+
 crossplane.help:
+	@echo "\n$$(tput bold)Crossplane targets:$$(tput sgr0)"
 	@echo "$$CROSSPLANE_MAKE_HELP"
 
-help-special: crossplane.help
-
-.PHONY: crossplane.help help-special
-
-# TODO(negz): Update CI to use these targets.
-# Removed incomplete vendor targets - using makelib targets instead
+.PHONY: submodules fallthrough help crossplane.help check-terraform-version build.init local-deploy uptest uptest-render
