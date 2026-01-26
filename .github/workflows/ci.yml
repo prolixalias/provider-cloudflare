@@ -48,7 +48,6 @@ jobs:
             package/crds/**
       - name: Report breaking CRD OpenAPI v3 schema changes
         if: steps.modified-crds.outputs.any_changed == 'true'
-        env:
           MODIFIED_CRD_LIST: ${{ steps.modified-crds.outputs.all_changed_files }}
         run: |
           make crddiff
@@ -318,7 +317,6 @@ jobs:
 
       - name: Build Artifacts
         run: make -j2 build.all
-        env:
           # We're using docker buildx, which doesn't actually load the images it
           # builds by default. Specifying --load does so.
           BUILD_ARGS: "--load"
