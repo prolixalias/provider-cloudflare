@@ -318,9 +318,9 @@ jobs:
 
       - name: Build Artifacts
         run: make -j2 build.all
-          # We're using docker buildx, which doesn't actually load the images it
-          # builds by default. Specifying --load does so.
+        env:
           BUILD_ARGS: "--load"
+        # We're using docker buildx, which doesn't actually load the images it builds by default. Specifying --load does so.
 
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
