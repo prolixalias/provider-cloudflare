@@ -211,10 +211,9 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       LOCAL_XPKG_BUILD: true
-    needs: [
+    needs:
       - detect-noop
       - unit-tests
-      ]
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
