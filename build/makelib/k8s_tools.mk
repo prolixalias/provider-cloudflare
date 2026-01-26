@@ -66,6 +66,10 @@ KUTTL := $(TOOLS_HOST_DIR)/kuttl-$(KUTTL_VERSION)
 # the version of uptest to use
 UPTEST_VERSION ?= v0.1.0
 UPTEST := $(TOOLS_HOST_DIR)/uptest-$(UPTEST_VERSION)
+
+# the version of crossplane CLI to use
+CROSSPLANE_CLI_VERSION ?= v2.1.3
+CROSSPLANE_CLI := $(TOOLS_HOST_DIR)/crossplane-$(CROSSPLANE_CLI_VERSION)
 # ====================================================================================
 # Common Targets
 
@@ -164,4 +168,11 @@ $(UPTEST):
 	@curl -fsSLo $(UPTEST) https://github.com/crossplane/uptest/releases/download/$(UPTEST_VERSION)/uptest_$(SAFEHOSTPLATFORM) || $(FAIL)
 	@chmod +x $(UPTEST)
 	@$(OK) installing uptest $(UPTEST)
+
+# crossplane CLI download and install
+$(CROSSPLANE_CLI):
+	@$(INFO) installing crossplane CLI $(CROSSPLANE_CLI_VERSION)
+	@curl -fsSLo $(CROSSPLANE_CLI) https://releases.crossplane.io/stable/$(CROSSPLANE_CLI_VERSION)/bin/$(SAFEHOST_PLATFORM)/crank || $(FAIL)
+	@chmod +x $(CROSSPLANE_CLI)
+	@$(OK) installing crossplane CLI $(CROSSPLANE_CLI_VERSION)
 

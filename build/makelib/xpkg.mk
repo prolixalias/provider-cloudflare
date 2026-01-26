@@ -61,16 +61,16 @@ UP ?= up
 
 # 1: xpkg
 define xpkg.build.targets
-xpkg.build.$(1):
+xpkg.build.$(1): $(CROSSPLANE_CLI)
 	@$(INFO) Building package $(1)-$(VERSION).xpkg for $(PLATFORM)
 	@mkdir -p $(OUTPUT_DIR)/xpkg/$(PLATFORM)
-	@controller_arg=$$$$(grep -E '^kind:\s+Provider\s*$$$$' $(XPKG_DIR)/crossplane.yaml > /dev/null && echo "--controller $(BUILD_REGISTRY)/$(1)-$(ARCH)"); \
-	$(UP) xpkg build \
-		$$$${controller_arg} \
-		--package-root $(XPKG_DIR) \
-		--examples-root $(XPKG_EXAMPLES_DIR) \
-		--ignore $(XPKG_IGNORE) \
-		--output $(XPKG_OUTPUT_DIR)/$(PLATFORM)/$(1)-$(VERSION).xpkg || $(FAIL)
+	@embed_arg=$$$$(grep -E '^kind:\s+Provider\s*$$$$' $(XPKG_DIR)/crossplane.yaml > /dev/null && echo "--embed-runtime-image=$(BUILD_REGISTRY)/$(1)-$(ARCH)"); \
+	$(CROSSPLANE_CLI) xpkg build \
+		$$$${embed_arg} \
+		--package-root=$(XPKG_DIR) \
+		--examples-root=$(XPKG_EXAMPLES_DIR) \
+		--ignore="$(XPKG_IGNORE)" \
+		--package-file=$(XPKG_OUTPUT_DIR)/$(PLATFORM)/$(1)-$(VERSION).xpkg || $(FAIL)
 	@$(OK) Built package $(1)-$(VERSION).xpkg for $(PLATFORM)
 xpkg.build: xpkg.build.$(1)
 endef
