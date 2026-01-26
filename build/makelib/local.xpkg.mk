@@ -41,5 +41,5 @@ local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
 	@$(INFO) deploying provider package $* $(VERSION)
 	@$(KIND) load docker-image $(BUILD_REGISTRY)/$*-$(ARCH) -n $(KIND_CLUSTER_NAME)
 	@echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"debug-config"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"template":{"spec":{"containers":[{"name":"package-runtime","args":["-d"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)"}]}}}}}}' | $(KUBECTL) apply -f -
-	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"$*-$(VERSION).gz","packagePullPolicy":"Never","runtimeConfigRef":{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","name":"debug-config"}}}' | $(KUBECTL) apply -f -
+	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"$(BUILD_REGISTRY)/$*-$(ARCH)","packagePullPolicy":"Never","runtimeConfigRef":{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","name":"debug-config"}}}' | $(KUBECTL) apply -f -
 	@$(OK) deploying provider package $* $(VERSION)
