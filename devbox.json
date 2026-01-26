@@ -12,6 +12,7 @@
     "golangci-lint@latest",
     "gofumpt@latest",
     "goreleaser@latest",
+    "gotools@latest",
     "delve@latest",
     "kubectl@latest",
     "kind@latest",
