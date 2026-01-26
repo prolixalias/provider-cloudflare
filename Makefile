@@ -21,7 +21,7 @@ export TERRAFORM_NATIVE_PROVIDER_BINARY ?= terraform-provider-cloudflare_v5.15.0
 export TERRAFORM_DOCS_PATH ?= docs/resources
 
 
-PLATFORMS ?= linux_amd64 linux_arm64
+PLATFORMS ?= linux_amd64 linux_arm64\n\nLOCAL_XPKG_BUILD ?= false\nifeq ($(LOCAL_XPKG_BUILD),true)\nBUILD_REGISTRY := localhost/build-$(shell echo $(HOSTNAME)-$(ROOT_DIR) | $(SHA256SUM) | cut -c1-8)\nendif
 
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only

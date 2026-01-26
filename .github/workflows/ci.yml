@@ -32,7 +32,7 @@ jobs:
 
   report-breaking-changes:
     runs-on: ubuntu-24.04
-    needs: detect-noop
+    env:\n      LOCAL_XPKG_BUILD: true\n    needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
     steps:
       - name: Checkout
@@ -209,6 +209,8 @@ jobs:
           files: _output/tests/linux_amd64/coverage.txt
 
   local-deploy:
+    env:
+      LOCAL_XPKG_BUILD: true
     runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
