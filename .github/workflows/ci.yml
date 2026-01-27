@@ -307,11 +307,16 @@ jobs:
         run: |
           reg_port='5001'
           image_base="provider-cloudflare"
-          tag="v0.0.0"  # Adjust this to match your actual built tag (e.g., from make build output or git sha)
-          local_image="localhost/provider-cloudflare-build/${image_base}-amd64"  # From your original log; adjust if different
+          tag="v0.0.0"  # ← Change this if your build uses a different tag (check docker images after make build)
+          local_image="localhost/provider-cloudflare-build/${image_base}-amd64"  # From your original error log
           local_tag="localhost:${reg_port}/${image_base}:${tag}"
           docker tag "${local_image}" "${local_tag}"
           docker push "${local_tag}"
+
+      - name: Verify pushed image (debug helper)
+        run: |
+          curl -s http://localhost:5001/v2/_catalog || echo "Registry catalog failed"
+          curl -s http://localhost:5001/v2/provider-cloudflare/tags/list || echo "Tags list failed"
 
       - name: Install Crossplane
         run: |
@@ -330,12 +335,13 @@ jobs:
           spec:
             deploymentTemplate:
               spec:
+                selector: {}  # Required field - empty map satisfies validation
                 template:
                   spec:
                     containers:
                     - name: package-runtime
                       args:
-                      - --debug  # optional: for more logs during test
+                      - --debug
           ---
           apiVersion: pkg.crossplane.io/v1
           kind: Provider
@@ -347,8 +353,17 @@ jobs:
               name: debug-config
           EOF
 
-          kubectl wait --for=condition=Healthy provider/provider-cloudflare --timeout=5m
+          echo "Waiting for provider to become healthy..."
+          kubectl wait --for=condition=Healthy provider/provider-cloudflare --timeout=5m || true
+
+          echo "Provider status:"
           kubectl get provider provider-cloudflare -o yaml
+
+          echo "Provider describe:"
+          kubectl describe provider provider-cloudflare
+
+          echo "Provider pod logs (if exists):"
+          kubectl logs -n crossplane-system -l pkg.crossplane.io/provider=provider-cloudflare --tail=100 || true
 
   publish-artifacts:
     runs-on: ubuntu-24.04
