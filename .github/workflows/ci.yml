@@ -296,8 +296,9 @@ jobs:
 
       - name: Push provider image to local registry
         run: |
+          # Push to localhost:5001 (host-mapped port) - no HTTPS needed
           SOURCE_IMAGE="localhost/provider-cloudflare-build/provider-cloudflare-amd64"
-          TARGET_IMAGE="${REGISTRY_IP}:5000/provider-cloudflare:v0.0.0"
+          TARGET_IMAGE="localhost:5001/provider-cloudflare:v0.0.0"
           echo "Tagging ${SOURCE_IMAGE} as ${TARGET_IMAGE}"
           docker tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
           docker push "${TARGET_IMAGE}"
