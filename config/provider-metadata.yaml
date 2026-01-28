@@ -178,7 +178,7 @@ resources:
             permission_groups: (Attributes Set) A set of permission groups that are specified to the policy. (see below for nested schema)
             policies: (Attributes Set) Array of policies associated with this member. (see below for nested schema)
             resource_groups: (Attributes Set) A list of resource groups that the policy applies to. (see below for nested schema)
-            roles: (List of String) Array of roles associated with this member.
+            roles: (Set of String) Set of roles associated with this member.
             status: '(String) Available values: "accepted", "pending".'
             two_factor_authentication_enabled: (Boolean) Indicates whether two-factor authentication is enabled for the user account. Does not apply to API authentication.
             user: (Attributes) Details of the user associated to the membership. (see below for nested schema)
@@ -221,7 +221,7 @@ resources:
             public_name: (String) The full name of the rate plan.
             rate_plan: (Attributes) The rate plan applied to the subscription. (see below for nested schema)
             scope: (String) The scope that this rate plan applies to.
-            sets: (List of String) The list of sets this rate plan applies to.
+            sets: (List of String) The list of sets this rate plan applies to. Returns array of strings.
             state: |-
                 (String) The state that the subscription is in.
                 Available values: "Trial", "Provisioned", "Paid", "AwaitingPayment", "Cancelled", "Failed", "Expired".
@@ -342,9 +342,73 @@ resources:
             - $ terraform import cloudflare_address_map.example '<account_id>/<address_map_id>'
     cloudflare_api_shield:
         subCategory: ""
+        description: Manages API Shield configuration properties for a zone, specifically auth ID characteristics.
         name: cloudflare_api_shield
         title: cloudflare_api_shield Resource - Cloudflare
         examples:
+            - name: header_example
+              manifest: |-
+                {
+                  "auth_id_characteristics": [
+                    {
+                      "name": "authorization",
+                      "type": "header"
+                    }
+                  ],
+                  "zone_id": "0da42c8d2132a9ddaf714f9e7c920711"
+                }
+            - name: cookie_example
+              manifest: |-
+                {
+                  "auth_id_characteristics": [
+                    {
+                      "name": "session_id",
+                      "type": "cookie"
+                    }
+                  ],
+                  "zone_id": "0da42c8d2132a9ddaf714f9e7c920711"
+                }
+            - name: jwt_example
+              manifest: |-
+                {
+                  "auth_id_characteristics": [
+                    {
+                      "name": "d5902294-00c3-4aed-b517-57e752e9cd58:$.sub",
+                      "type": "jwt"
+                    }
+                  ],
+                  "zone_id": "0da42c8d2132a9ddaf714f9e7c920711"
+                }
+            - name: multiple_identifiers
+              manifest: |-
+                {
+                  "auth_id_characteristics": [
+                    {
+                      "name": "x-api-key",
+                      "type": "header"
+                    },
+                    {
+                      "name": "session_token",
+                      "type": "cookie"
+                    }
+                  ],
+                  "zone_id": "0da42c8d2132a9ddaf714f9e7c920711"
+                }
+            - name: header_and_jwt
+              manifest: |-
+                {
+                  "auth_id_characteristics": [
+                    {
+                      "name": "x-client-id",
+                      "type": "header"
+                    },
+                    {
+                      "name": "d5902294-00c3-4aed-b517-57e752e9cd58:$.email",
+                      "type": "jwt"
+                    }
+                  ],
+                  "zone_id": "0da42c8d2132a9ddaf714f9e7c920711"
+                }
             - name: example_api_shield
               manifest: |-
                 {
@@ -359,7 +423,9 @@ resources:
         argumentDocs:
             auth_id_characteristics: (Attributes List) (see below for nested schema)
             id: (String) Identifier.
-            name: (String) The name of the characteristic field, i.e., the header or cookie name.
+            json_path: is a RFC 9535 JSONPath expression that returns a singleton value (interpreted as a string)
+            name: (String) The name of the characteristic field, i.e., the header or cookie name. When using type "jwt", this must be a claim location expressed as $(token_config_id):$(json_path), where token_config_id is the ID of the token configuration used in validating the JWT, and json_path is a RFC 9535 JSONPath expression.
+            token_config_id: is the ID of the token configuration used in validating the JWT
             type: |-
                 (String) The type of characteristic.
                 Available values: "header", "cookie", "jwt".
@@ -1288,10 +1354,10 @@ resources:
             description: (String)
             id: |-
                 (String) Error Page Types
-                Available values: "1000_errors", "500_errors", "basic_challenge", "country_challenge", "ip_block", "managed_challenge", "ratelimit_block", "under_attack", "waf_block".
+                Available values: "1000_errors", "500_errors", "basic_challenge", "country_challenge", "ip_block", "managed_challenge", "ratelimit_block", "under_attack", "waf_block", "waf_challenge".
             identifier: |-
                 (String) Error Page Types
-                Available values: "1000_errors", "500_errors", "basic_challenge", "country_challenge", "ip_block", "managed_challenge", "ratelimit_block", "under_attack", "waf_block".
+                Available values: "1000_errors", "500_errors", "basic_challenge", "country_challenge", "ip_block", "managed_challenge", "ratelimit_block", "under_attack", "waf_block", "waf_challenge".
             modified_on: (String)
             preview_target: (String)
             required_tokens: (List of String)
@@ -2141,20 +2207,20 @@ resources:
             disabled: (Boolean) Set to true to disable caching of SQL responses. Default is false.
             host: (String) Defines the host (hostname or IP) of your origin database.
             id: (String) Define configurations using a unique string identifier.
-            max_age: (Number) Specify the maximum duration items should persist in the cache. Not returned if set to the default (60).
+            max_age: (Number) Specify the maximum duration (in seconds) items should persist in the cache. Defaults to 60 seconds if not specified.
             modified_on: (String) Defines the last modified time of the Hyperdrive configuration.
             mtls: (Attributes) (see below for nested schema)
             mtls_certificate_id: (String) Define mTLS certificate ID obtained after uploading client cert.
-            name: (String)
+            name: (String) The name of the Hyperdrive configuration. Used to identify the configuration in the Cloudflare dashboard and API.
             origin: (Attributes) (see below for nested schema)
             origin_connection_limit: (Number) The (soft) maximum number of connections the Hyperdrive is allowed to make to the origin database.
             password: (String, Sensitive) Set the password needed to access your origin database. The API never returns this write-only value.
-            port: '(Number) Defines the port (default: 5432 for Postgres) of your origin database.'
+            port: (Number) Defines the port of your origin database. Defaults to 5432 for PostgreSQL or 3306 for MySQL if not specified.
             scheme: |-
                 (String) Specifies the URL scheme used to connect to your origin database.
                 Available values: "postgres", "postgresql", "mysql".
             sslmode: (String) Set SSL mode to 'require', 'verify-ca', or 'verify-full' to verify the CA.
-            stale_while_revalidate: (Number) Specify the number of seconds the cache may serve a stale response. Omitted if set to the default (15).
+            stale_while_revalidate: (Number) Specify the number of seconds the cache may serve a stale response. Defaults to 15 seconds if not specified.
             user: (String) Set the user of your origin database.
         importStatements:
             - $ terraform import cloudflare_hyperdrive_config.example '<account_id>/<hyperdrive_id>'
@@ -2382,6 +2448,7 @@ resources:
             url_hostname: (String)
         importStatements:
             - |-
+              $ terraform import cloudflare_list_item.example '<account_id>/<list_id>/<item_id>'
               $ terraform import cloudflare_list_item.example '<account_id>/<list_id>/<item_id>'
               $ terraform import cloudflare_list_item.example '<account_id>/<list_id>/<item_id>'
     cloudflare_load_balancer:
@@ -3255,20 +3322,32 @@ resources:
                   "ttl": 0
                 }
         argumentDocs:
+            '''!@#$%^&*()+[]{}<>/.,;:_-~': = |`
             account_id: (String) Identifier
+            automatic_return_routing: (Boolean) True if automatic stateful return routing should be enabled for a tunnel, false otherwise.
+            bgp: (Attributes) (see below for nested schema)
+            bgp_state: (String)
+            bgp_status: (Attributes) (see below for nested schema)
+            cf_speaker_ip: (String)
+            cf_speaker_port: (Number)
             cloudflare_gre_endpoint: (String) The IP address assigned to the Cloudflare side of the GRE tunnel.
             created_on: (String) The date and time the tunnel was created.
+            customer_asn: (Number) ASN used on the customer end of the BGP session
             customer_gre_endpoint: (String) The IP address assigned to the customer side of the GRE tunnel.
+            customer_speaker_ip: (String)
+            customer_speaker_port: (Number)
             description: (String) An optional description of the GRE tunnel.
             direction: |-
                 (String) The direction of the flow of the healthcheck. Either unidirectional, where the probe comes to you via the tunnel and the result comes back to Cloudflare via the open Internet, or bidirectional where both the probe and result come and go via the tunnel.
                 Available values: "unidirectional", "bidirectional".
             effective: (String) The effective health check target. If 'saved' is empty, then this field will be populated with the calculated default value on GET requests. Ignored in POST, PUT, and PATCH requests.
             enabled: (Boolean) Determines whether to run healthchecks for a tunnel.
+            extra_prefixes: (List of String) Prefixes in this list will be advertised to the customer device, in addition to the routes in the Magic routing table.
             health_check: (Attributes) (see below for nested schema)
             id: (String) Identifier
             interface_address: '(String) A 31-bit prefix (/31 in CIDR notation) supporting two hosts, one for each side of the tunnel. Select the subnet from the following private IP space: 10.0.0.0–10.255.255.255, 172.16.0.0–172.31.255.255, 192.168.0.0–192.168.255.255.'
             interface_address6: (String) A 127 bit IPV6 prefix from within the virtual_subnet6 prefix space with the address being the first IP of the subnet and not same as the address of virtual_subnet6. Eg if virtual_subnet6 is 2606:54c1:7:0:a9fe:12d2::/127 , interface_address6 could be 2606:54c1:7:0:a9fe:12d2:1:200/127
+            md5_key: (String) MD5 key to use for session authentication.
             modified_on: (String) The date and time the tunnel was last modified.
             mtu: (Number) Maximum Transmission Unit (MTU) in bytes for the GRE tunnel. The minimum value is 576.
             name: (String) The name of the tunnel. The name cannot contain spaces or special characters, must be 15 characters or less, and cannot share a name with another GRE tunnel.
@@ -3276,11 +3355,14 @@ resources:
                 (String) How frequent the health check is run. The default value is mid.
                 Available values: "low", "mid", "high".
             saved: (String) The saved health check target. Setting the value to the empty string indicates that the calculated default value will be used.
+            state: '(String) Available values: "BGP_DOWN", "BGP_UP", "BGP_ESTABLISHING".'
             target: (Attributes) The destination address in a request type health check. After the healthcheck is decapsulated at the customer end of the tunnel, the ICMP echo will be forwarded to this address. This field defaults to customer_gre_endpoint address. This field is ignored for bidirectional healthchecks as the interface_address (not assigned to the Cloudflare side of the tunnel) is used as the target. Must be in object form if the x-magic-new-hc-target header is set to true and string form if x-magic-new-hc-target is absent or set to false. (see below for nested schema)
+            tcp_established: (Boolean)
             ttl: (Number) Time To Live (TTL) in number of hops of the GRE tunnel.
             type: |-
                 (String) The type of healthcheck to run, reply or request. The default value is reply.
                 Available values: "reply", "request".
+            updated_at: (String)
         importStatements:
             - $ terraform import cloudflare_magic_wan_gre_tunnel.example '<account_id>/<gre_tunnel_id>'
     cloudflare_magic_wan_ipsec_tunnel:
@@ -3322,22 +3404,38 @@ resources:
                   "replay_protection": false
                 }
         argumentDocs:
+            '''!@#$%^&*()+[]{}<>/.,;:_-~': = |`
             account_id: (String) Identifier
             allow_null_cipher: (Boolean) When true, the tunnel can use a null-cipher (ENCR_NULL) in the ESP tunnel (Phase 2).
+            automatic_return_routing: (Boolean) True if automatic stateful return routing should be enabled for a tunnel, false otherwise.
+            bgp: (Attributes) (see below for nested schema)
+            bgp_state: (String)
+            bgp_status: (Attributes) (see below for nested schema)
+            cf_speaker_ip: (String)
+            cf_speaker_port: (Number)
             cloudflare_endpoint: (String) The IP address assigned to the Cloudflare side of the IPsec tunnel.
             created_on: (String) The date and time the tunnel was created.
+            custom_remote_identities: (Attributes) (see below for nested schema)
+            customer_asn: (Number) ASN used on the customer end of the BGP session
             customer_endpoint: (String) The IP address assigned to the customer side of the IPsec tunnel. Not required, but must be set for proactive traceroutes to work.
+            customer_speaker_ip: (String)
+            customer_speaker_port: (Number)
             description: (String) An optional description forthe IPsec tunnel.
             direction: |-
                 (String) The direction of the flow of the healthcheck. Either unidirectional, where the probe comes to you via the tunnel and the result comes back to Cloudflare via the open Internet, or bidirectional where both the probe and result come and go via the tunnel.
                 Available values: "unidirectional", "bidirectional".
             effective: (String) The effective health check target. If 'saved' is empty, then this field will be populated with the calculated default value on GET requests. Ignored in POST, PUT, and PATCH requests.
             enabled: (Boolean) Determines whether to run healthchecks for a tunnel.
+            extra_prefixes: (List of String) Prefixes in this list will be advertised to the customer device, in addition to the routes in the Magic routing table.
+            fqdn_id: |-
+                (String) A custom IKE ID of type FQDN that may be used to identity the IPsec tunnel. The
+                generated IKE IDs can still be used even if this custom value is specified.
             health_check: (Attributes) (see below for nested schema)
             id: (String) Identifier
             interface_address: '(String) A 31-bit prefix (/31 in CIDR notation) supporting two hosts, one for each side of the tunnel. Select the subnet from the following private IP space: 10.0.0.0–10.255.255.255, 172.16.0.0–172.31.255.255, 192.168.0.0–192.168.255.255.'
             interface_address6: (String) A 127 bit IPV6 prefix from within the virtual_subnet6 prefix space with the address being the first IP of the subnet and not same as the address of virtual_subnet6. Eg if virtual_subnet6 is 2606:54c1:7:0:a9fe:12d2::/127 , interface_address6 could be 2606:54c1:7:0:a9fe:12d2:1:200/127
             last_generated_on: (String) The date and time the tunnel was last modified.
+            md5_key: (String) MD5 key to use for session authentication.
             modified_on: (String) The date and time the tunnel was last modified.
             name: (String) The name of the IPsec tunnel. The name cannot share a name with other tunnels.
             psk: (String, Sensitive) A randomly generated or provided string for use in the IPsec tunnel.
@@ -3347,10 +3445,13 @@ resources:
                 Available values: "low", "mid", "high".
             replay_protection: (Boolean) If true, then IPsec replay protection will be supported in the Cloudflare-to-customer direction.
             saved: (String) The saved health check target. Setting the value to the empty string indicates that the calculated default value will be used.
+            state: '(String) Available values: "BGP_DOWN", "BGP_UP", "BGP_ESTABLISHING".'
             target: (Attributes) The destination address in a request type health check. After the healthcheck is decapsulated at the customer end of the tunnel, the ICMP echo will be forwarded to this address. This field defaults to customer_gre_endpoint address. This field is ignored for bidirectional healthchecks as the interface_address (not assigned to the Cloudflare side of the tunnel) is used as the target. Must be in object form if the x-magic-new-hc-target header is set to true and string form if x-magic-new-hc-target is absent or set to false. (see below for nested schema)
+            tcp_established: (Boolean)
             type: |-
                 (String) The type of healthcheck to run, reply or request. The default value is reply.
                 Available values: "reply", "request".
+            updated_at: (String)
         importStatements:
             - $ terraform import cloudflare_magic_wan_ipsec_tunnel.example '<account_id>/<ipsec_tunnel_id>'
     cloudflare_magic_wan_static_route:
@@ -4409,7 +4510,7 @@ resources:
                 Available values: "default", "eu", "fedramp".
             location: |-
                 (String) Location of the bucket.
-                Available values: "apac", "eeur", "enam", "weur", "wnam", "oc".
+                Available values: "apac", "eeur", "enam", "weur", "wnam", "oc".  Note: location is only honored the first time a bucket with a given name is created. If you delete and recreate a bucket with the same name, the original bucket location will be used. It is also a best-effort, not a guarantee, of bucket location.
             name: (String) Name of the bucket.
             storage_class: |-
                 (String) Storage class for newly uploaded objects, unless specified otherwise.
@@ -4970,12 +5071,18 @@ resources:
             raw_response_fields: (Attributes List) The raw response fields to log. (see below for nested schema)
             read_timeout: (Number) A timeout value between two successive read operations to use for your origin server. Historically, the timeout value between two read options from Cloudflare to an origin server is 100 seconds. If you are attempting to reduce HTTP 524 errors because of timeouts from an origin server, try increasing this timeout value.
             ref: (String) The reference of the rule (the rule's ID by default).
+            request_body_buffering: |-
+                (String) The request body buffering mode to configure.
+                Available values: "none", "standard", "full".
             request_fields: (Attributes List) The raw request fields to log. (see below for nested schema)
             requests_per_period: (Number) The threshold of requests per period after which the action will be executed for the first time.
             requests_to_origin: (Boolean) Whether counting is only performed when an origin is reached.
             resolved: (Boolean) Whether to use the resolved host in the cache key.
             respect_strong_etags: (Boolean) Whether Cloudflare should respect strong ETag (entity tag) headers. If false, Cloudflare converts strong ETag headers to weak ETag headers.
             response: (Attributes) The response to show when the block is applied. (see below for nested schema)
+            response_body_buffering: |-
+                (String) The response body buffering mode to configure.
+                Available values: "none", "standard".
             response_fields: (Attributes List) The transformed response fields to log. (see below for nested schema)
             rocket_loader: (Boolean) Whether to enable Rocket Loader.
             rules: (Attributes List) The list of rules in the ruleset. (see below for nested schema)
@@ -6295,6 +6402,7 @@ resources:
             key_jwk: (String, Sensitive) Key data in JSON Web Key format. Required if format is "jwk".
             limits: (Attributes) Resource limits enforced at runtime. (see below for nested schema)
             main_module: (String) The name of the main module in the modules array (e.g. the name of the module that exports a fetch handler).
+            main_script_base64: (String) The base64-encoded main script content. This is only returned for service worker syntax workers (not ES modules). Used when importing existing workers that use the older service worker syntax.
             migrations: (Attributes) Migrations for Durable Objects associated with the version. Migrations are applied when the version is deployed. (see below for nested schema)
             mode: |-
                 (String) Placement mode for the version.
@@ -6649,6 +6757,8 @@ resources:
             has_modules: (Boolean) Whether a Worker contains modules.
             head_sampling_rate: (Number) The sampling rate for incoming requests. From 0 to 1 (1 = 100%, 0.1 = 10%). Default is 1.
             headers: (String) The contents of a _headers file (used to attach custom headers on asset responses).
+            host: (String) TCP host and port for targeted placement.
+            hostname: (String) HTTP hostname for targeted placement.
             html_handling: |-
                 (String) Determines the redirects and rewrites of requests for HTML content.
                 Available values: "auto-trailing-slash", "force-trailing-slash", "drop-trailing-slash", "none".
@@ -6694,9 +6804,10 @@ resources:
             part: (String) The name of the file containing the data content. Only accepted for service worker syntax Workers.
             persist: (Boolean) Whether log persistence is enabled for the Worker.
             pipeline: (String) Name of the Pipeline to bind to.
-            placement: (Attributes) Configuration for Smart Placement. (see below for nested schema)
+            placement: (Attributes) Configuration for Smart Placement. Specify either mode for Smart Placement, or one of region/hostname/host for targeted placement. (see below for nested schema)
             queue_name: (String) Name of the Queue to bind to.
             redirects: (String) The contents of a _redirects file (used to apply redirects or proxy paths ahead of asset serving).
+            region: (String) Cloud region for targeted placement in format 'provider:region'.
             renamed_classes: (Attributes List) A list of classes with Durable Object namespaces that were renamed. (see below for nested schema)
             run_worker_first: (Dynamic) When a boolean true, requests will always invoke the Worker script. Otherwise, attempt to serve an asset matching the request, falling back to the Worker script. When a list of strings, contains path rules to control routing to either the Worker or assets. Glob (*) and negative (!) rules are supported. Rules must start with either '/' or '!/'. At least one non-negative rule must be provided, and negative rules have higher precedence than non-negative rules.
             script_name: (String) Name of the script, used in URLs and route configuration.
@@ -7936,7 +8047,7 @@ resources:
                   "account_id": "699d98642c564d2e855e9661899b7252",
                   "config": {
                     "api_url": "https://as123.awmdm.com/API",
-                    "auth_url": "https://na.uemauth.vmwservices.com/connect/token",
+                    "auth_url": "https://na.uemauth.workspaceone.com/connect/token",
                     "client_id": "example client id",
                     "client_secret": "example client secret"
                   },
@@ -8197,26 +8308,27 @@ resources:
               manifest: |-
                 {
                   "account_id": "account_id",
-                  "ai_context_enabled": true,
-                  "allowed_match_count": 5,
-                  "confidence_threshold": "confidence_threshold",
-                  "context_awareness": {
-                    "enabled": true,
-                    "skip": {
-                      "files": true
-                    }
-                  },
-                  "description": "description",
+                  "description": "Custom profile with entries",
                   "name": "name",
-                  "ocr_enabled": true,
                   "shared_entries": [
                     {
                       "enabled": true,
-                      "entry_id": "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-                      "entry_type": "custom"
+                      "entry_id": "56a8c060-01bb-4f89-ba1e-3ad42770a342",
+                      "entry_type": "predefined"
                     }
                   ]
                 }
+              dependencies:
+                cloudflare_zero_trust_dlp_custom_entry.example_custom_entry: |-
+                    {
+                      "account_id": "account_id",
+                      "enabled": true,
+                      "name": "custom",
+                      "pattern": {
+                        "regex": "customentryregex"
+                      },
+                      "profile_id": "${cloudflare_zero_trust_dlp_custom_profile.example_zero_trust_dlp_custom_profile.id}"
+                    }
         argumentDocs:
             account_id: (String)
             ai_context_enabled: (Boolean)
@@ -8427,20 +8539,23 @@ resources:
               manifest: |-
                 {
                   "account_id": "account_id",
-                  "ai_context_enabled": true,
-                  "allowed_match_count": 5,
-                  "confidence_threshold": "confidence_threshold",
                   "enabled_entries": [
-                    "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e"
-                  ],
-                  "entries": [
-                    {
-                      "enabled": true,
-                      "id": "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e"
-                    }
+                    "56a8c060-01bb-4f89-ba1e-3ad42770a342",
+                    "7f575e6d-039a-465e-85cf-175bda88d4f2",
+                    "03ebabfd-ce7e-45ed-8061-65e28f0a6e53",
+                    "2d9c356d-b5a3-482a-b01e-0363e0de7458",
+                    "2f3657af-c39b-4899-9a98-22f7d187dd28",
+                    "753a16f9-f533-4208-a5b8-6319b201e9fb",
+                    "ebcea2c4-335a-457c-853b-f7ae7cc74e07",
+                    "3f5c4c83-f34c-4d17-81c7-3028385737b3",
+                    "d1a84fde-c375-4d3c-8a27-8c4eaa33cf60",
+                    "6dbe5604-d3a3-4c3e-905c-57985704bea7",
+                    "55ba2c6c-8ef4-4b2e-9148-e75e8b6ccac1",
+                    "5b1d5035-8c53-4bc9-a151-404eb32b34b4",
+                    "acf28d88-2daf-4bc4-aa36-5ac1fac0540a"
                   ],
                   "ocr_enabled": true,
-                  "profile_id": "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e"
+                  "profile_id": "e91a2360-da51-4fdf-9711-bcdecd462614"
                 }
         argumentDocs:
             account_id: (String)
@@ -9978,7 +10093,7 @@ resources:
                       "string"
                     ]
                   },
-                  "zone_id": "506e3185e9c882d175a2d0cb0093d9f2"
+                  "zone_id": "023e105f4ecef8ad9ca31a8372d0c353"
                 }
         argumentDocs:
             currency: (String) The monetary unit in which pricing information is displayed.
@@ -9989,16 +10104,16 @@ resources:
                 (String) How often the subscription is renewed automatically.
                 Available values: "weekly", "monthly", "quarterly", "yearly".
                 Note: Some plans may not support frequency configuration and will return "not-applicable".
-            id: (String) Subscription identifier tag.
+            id: (String) Identifier
             is_contract: (Boolean) Whether a rate plan is enterprise-based (or newly adopted term contract).
             price: (Number) The price of the subscription that will be billed, in US dollars.
             public_name: (String) The full name of the rate plan.
             rate_plan: (Attributes) The rate plan applied to the subscription. (see below for nested schema)
             scope: (String) The scope that this rate plan applies to.
-            sets: (List of String) The list of sets this rate plan applies to.
+            sets: (List of String) The list of sets this rate plan applies to. Returns array of strings.
             state: |-
                 (String) The state that the subscription is in.
                 Available values: "Trial", "Provisioned", "Paid", "AwaitingPayment", "Cancelled", "Failed", "Expired".
-            zone_id: (String) Subscription identifier tag.
+            zone_id: (String) Identifier
         importStatements:
             - $ terraform import cloudflare_zone_subscription.example '<zone_id>'

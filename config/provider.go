@@ -7,6 +7,7 @@ import (
 	ujconfig "github.com/crossplane/upjet/v2/pkg/config"
 
 	"github.com/prolixalias/provider-cloudflare/config/address"
+	cfprovider "github.com/prolixalias/terraform-provider-cloudflare/v5/provider"
 )
 
 const (
@@ -25,7 +26,9 @@ func GetProvider() *ujconfig.Provider {
 	pc := ujconfig.NewProvider([]byte(providerSchema), resourcePrefix, modulePath, []byte(providerMetadata),
 		ujconfig.WithRootGroup("cloudflare.upbound.io"),
 		ujconfig.WithShortName("cloudflare"),
+		ujconfig.WithIncludeList([]string{}),
 		ujconfig.WithTerraformPluginFrameworkIncludeList(ExternalNameConfigured()),
+		ujconfig.WithTerraformPluginFrameworkProvider(cfprovider.NewProvider("v5.16.0")()),
 		ujconfig.WithFeaturesPackage("internal/features"),
 		ujconfig.WithDefaultResourceOptions(
 			ExternalNameConfigurations(),
@@ -46,7 +49,9 @@ func GetProviderNamespaced() *ujconfig.Provider {
 	pc := ujconfig.NewProvider([]byte(providerSchema), resourcePrefix, modulePath, []byte(providerMetadata),
 		ujconfig.WithRootGroup("cloudflare.m.upbound.io"),
 		ujconfig.WithShortName("cloudflare"),
+		ujconfig.WithIncludeList([]string{}),
 		ujconfig.WithTerraformPluginFrameworkIncludeList(ExternalNameConfigured()),
+		ujconfig.WithTerraformPluginFrameworkProvider(cfprovider.NewProvider("v5.16.0")()),
 		ujconfig.WithFeaturesPackage("internal/features"),
 		ujconfig.WithDefaultResourceOptions(
 			ExternalNameConfigurations(),
