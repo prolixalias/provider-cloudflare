@@ -21,7 +21,7 @@ require (
 	sigs.k8s.io/controller-tools v0.19.0
 )
 
-replace github.com/prolixalias/terraform-provider-cloudflare/v5 => github.com/prolixalias/terraform-provider-cloudflare/v5 v5.0.0-20260128094654-295fac94f245
+replace github.com/prolixalias/terraform-provider-cloudflare/v5 => github.com/prolixalias/terraform-provider-cloudflare/v5 v5.0.0-20260128144654-295fac94f245
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
