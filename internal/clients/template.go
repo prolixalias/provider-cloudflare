@@ -24,17 +24,11 @@ const (
 	errUnmarshalCredentials = "cannot unmarshal template credentials as JSON"
 )
 
-// TerraformSetupBuilder builds Terraform a terraform.SetupFn function which
+// TerraformSetupBuilder builds a terraform.SetupFn function which
 // returns Terraform provider setup configuration
-func TerraformSetupBuilder(version, providerSource, providerVersion string) terraform.SetupFn {
+func TerraformSetupBuilder() terraform.SetupFn {
 	return func(ctx context.Context, client client.Client, mg resource.Managed) (terraform.Setup, error) {
-		ps := terraform.Setup{
-			Version: version,
-			Requirement: terraform.ProviderRequirement{
-				Source:  providerSource,
-				Version: providerVersion,
-			},
-		}
+		ps := terraform.Setup{}
 
 		pcSpec, err := resolveProviderConfig(ctx, client, mg)
 		if err != nil {
@@ -50,11 +44,18 @@ func TerraformSetupBuilder(version, providerSource, providerVersion string) terr
 			return ps, errors.Wrap(err, errUnmarshalCredentials)
 		}
 
-		// Set credentials in Terraform provider configuration.
-		/*ps.Configuration = map[string]any{
-			"username": creds["username"],
-			"password": creds["password"],
-		}*/
+		// Set Cloudflare credentials in provider configuration
+		ps.Configuration = map[string]any{}
+		if v, ok := creds["api_token"]; ok && v != "" {
+			ps.Configuration["api_token"] = v
+		}
+		if v, ok := creds["api_key"]; ok && v != "" {
+			ps.Configuration["api_key"] = v
+		}
+		if v, ok := creds["email"]; ok && v != "" {
+			ps.Configuration["email"] = v
+		}
+
 		return ps, nil
 	}
 }
