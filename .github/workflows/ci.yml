@@ -83,27 +83,10 @@ jobs:
         uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports
-
-      - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
-
-      - name: Cache the Go Build Cache
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: ${{ steps.go.outputs.cache }}
-          key: ${{ runner.os }}-build-lint-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-build-lint-
-
-      - name: Cache Go Dependencies
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: .work/pkg
-          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-pkg-
 
       - name: Generate Code
         run: make generate
@@ -116,6 +99,7 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_VERSION }}
           args: --fix
+          skip-cache: true
 
   check-diff:
     runs-on: ubuntu-24.04
@@ -143,27 +127,10 @@ jobs:
         uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports
-
-      - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
-
-      - name: Cache the Go Build Cache
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: ${{ steps.go.outputs.cache }}
-          key: ${{ runner.os }}-build-check-diff-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-build-check-diff-
-
-      - name: Cache Go Dependencies
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: .work/pkg
-          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-pkg-
 
       - name: Generate Code
         run: make generate
@@ -203,27 +170,10 @@ jobs:
         uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports
-
-      - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
-
-      - name: Cache the Go Build Cache
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: ${{ steps.go.outputs.cache }}
-          key: ${{ runner.os }}-build-unit-tests-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-build-unit-tests-
-
-      - name: Cache Go Dependencies
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
-        with:
-          path: .work/pkg
-          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-pkg-
 
       - name: Generate Code
         run: make generate
