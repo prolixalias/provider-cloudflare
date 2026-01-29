@@ -1,0 +1,27 @@
+version: "2"
+
+linters:
+  # Disable typecheck which requires full compilation of all dependencies
+  # The terraform-provider-cloudflare dependency is too large to compile
+  # on standard GitHub runners
+  disable:
+    - typecheck
+  
+  # Enable fast linters that don't require full compilation
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+linters-settings:
+  govet:
+    disable:
+      - composites
+
+issues:
+  exclude-dirs:
+    - vendor
+    - .work
