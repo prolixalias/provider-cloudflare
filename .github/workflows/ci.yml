@@ -62,7 +62,8 @@ jobs:
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
     env:
-      GOCACHE: /dev/null
+      GOCACHE: /dev/shm/go-cache
+      GOTMPDIR: /dev/shm/go-tmp
 
     steps:
       - name: Free Disk Space
@@ -108,7 +109,8 @@ jobs:
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
     env:
-      GOCACHE: /dev/null
+      GOCACHE: /dev/shm/go-cache
+      GOTMPDIR: /dev/shm/go-tmp
 
     steps:
       - name: Free Disk Space
@@ -150,7 +152,8 @@ jobs:
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
     env:
-      GOCACHE: /dev/null
+      GOCACHE: /dev/shm/go-cache
+      GOTMPDIR: /dev/shm/go-tmp
 
     steps:
       - name: Free Disk Space
@@ -200,7 +203,8 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       LOCAL_XPKG_BUILD: true
-      GOCACHE: /dev/null
+      GOCACHE: /dev/shm/go-cache
+      GOTMPDIR: /dev/shm/go-tmp
     needs:
       - detect-noop
       - report-breaking-changes
