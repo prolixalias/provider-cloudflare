@@ -64,7 +64,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
-      GOFLAGS: "-tags=ci"
+      GO_TAGS: ci
 
     steps:
       - name: Free Disk Space
@@ -115,7 +115,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
-      GOFLAGS: "-tags=ci"
+      GO_TAGS: ci
 
     steps:
       - name: Free Disk Space
@@ -162,7 +162,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
-      GOFLAGS: "-tags=ci"
+      GO_TAGS: ci
 
     steps:
       - name: Free Disk Space
