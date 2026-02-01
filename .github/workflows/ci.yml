@@ -64,6 +64,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
+      GOFLAGS: "-tags=ci"
 
     steps:
       - name: Free Disk Space
@@ -114,6 +115,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
+      GOFLAGS: "-tags=ci"
 
     steps:
       - name: Free Disk Space
@@ -160,6 +162,7 @@ jobs:
     env:
       GOCACHE: /dev/shm/go-cache
       GOTMPDIR: /dev/shm/go-tmp
+      GOFLAGS: "-tags=ci"
 
     steps:
       - name: Free Disk Space
@@ -201,8 +204,6 @@ jobs:
 
       - name: Run Unit Tests
         run: make -j2 test
-        env:
-          GOFLAGS: "-tags=ci"
 
       - name: Publish Unit Test Coverage
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
