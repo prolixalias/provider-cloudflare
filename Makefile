@@ -46,7 +46,7 @@ NPROCS ?= 1
 # to half the number of CPU cores.
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 
-GO_REQUIRED_VERSION ?= 1.25
+GO_REQUIRED_VERSION ?= 1.26
 GOLANGCILINT_VERSION ?= 2.8.0
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider $(GO_PROJECT)/cmd/generator
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
@@ -79,7 +79,23 @@ XPKG_REG_ORGS ?= ghcr.io/prolixalias
 # inferred.
 XPKG_REG_ORGS_NO_PROMOTE ?= ghcr.io/prolixalias
 XPKGS = $(PROJECT_NAME)
+# Use a flattened package root (crossplane.yaml + all crds in one dir) so the
+# Crossplane CLI's FsBackend includes every CRD when building the xpkg. Some
+# environments or path handling can omit CRDs in package/crds/ subdirs.
+XPKG_PACKAGE_FLAT ?= $(OUTPUT_DIR)/xpkg-package-flat
+XPKG_DIR ?= $(XPKG_PACKAGE_FLAT)
 -include build/makelib/xpkg.mk
+
+# Populate flattened package dir so xpkg build sees crossplane.yaml + all CRDs.
+xpkg.prepare.package:
+	@$(INFO) Preparing flattened package root for xpkg build
+	@rm -rf $(XPKG_PACKAGE_FLAT) && mkdir -p $(XPKG_PACKAGE_FLAT)
+	@cp $(ROOT_DIR)/package/crossplane.yaml $(XPKG_PACKAGE_FLAT)/
+	@cp $(ROOT_DIR)/package/crds/*.yaml $(XPKG_PACKAGE_FLAT)/ 2>/dev/null || true
+	@test -f $(XPKG_PACKAGE_FLAT)/crossplane.yaml || (echo "ERROR: crossplane.yaml missing"; exit 1)
+	@test -f $(XPKG_PACKAGE_FLAT)/zero.cloudflare.upbound.io_trusttunnelcloudflareds.yaml || (echo "ERROR: TrustTunnelCloudflared CRD missing - run 'make generate' first"; exit 1)
+	@XPKG_DIR=$(XPKG_PACKAGE_FLAT) $(ROOT_DIR)/scripts/xpkg-diagnose.sh pre
+	@$(OK) Package root ready at $(XPKG_PACKAGE_FLAT)
 
 # ====================================================================================
 # Fallthrough
@@ -97,7 +113,43 @@ fallthrough: submodules
 
 # NOTE(hasheddan): we force image building to happen prior to xpkg build so that
 # we ensure image is present in daemon.
-xpkg.build.provider-cloudflare: do.build.images
+# Also require generate so package/crds/ is populated (CRDs are gitignored and generated);
+# otherwise the .xpkg can omit CRDs (e.g. trusttunnelcloudflareds) and the cluster will not have them.
+xpkg.build.provider-cloudflare: do.build.images generate xpkg.prepare.package
+
+# Deep-dive diagnostic: what the CLI sees (pre) and what is in the built xpkg (post).
+xpkg.diagnose: xpkg.prepare.package
+	@XPKG_DIR=$(XPKG_PACKAGE_FLAT) $(ROOT_DIR)/scripts/xpkg-diagnose.sh pre
+xpkg.diagnose.postbuild: xpkg.build.provider-cloudflare
+	@$(ROOT_DIR)/scripts/xpkg-diagnose.sh post
+
+# Ensure QEMU binfmt is installed so Docker can build images for non-native arches
+# (e.g. amd64 on arm64 host). Required for build.multiarch.linux; harmless if already set.
+binfmt.install:
+	@docker run --privileged --rm tonistiigi/binfmt --install all 2>/dev/null || \
+		(echo "WARNING: binfmt install failed (need docker and --privileged). On arm64, multi-arch build may fail with 'exec format error'."; exit 0)
+
+# Build provider package for both linux/amd64 and linux/arm64 (required for
+# clusters that need linux/amd64; default build on Mac only produces linux/arm64).
+# Ensures binfmt is installed so cross-arch Docker builds work.
+# Use: VERSION=v0.0.0 make build.multiarch.linux
+build.multiarch.linux: binfmt.install
+	@$(MAKE) build.all PLATFORMS="linux_amd64 linux_arm64"
+
+# Build image with Terraform external binary (required for TrustTunnelCloudflared / Tunnel).
+# Use this then push.multiarch to publish a tag that works for Tunnel in stacked.
+# Example: VERSION=v0.0.2 make build.terraform-external.multiarch.linux
+build.terraform-external.multiarch.linux: binfmt.install
+	@export BUILD_TERRAFORM_EXTERNAL=1 && $(MAKE) build.all PLATFORMS="linux_amd64 linux_arm64"
+
+# Build for both linux arches and push to XPKG_REG_ORGS (e.g. ghcr.io/prolixalias).
+# Requires: docker login ghcr.io (or your registry). Use: VERSION=v0.0.0 make push.multiarch
+# For Tunnel support: build terraform-external image and push (e.g. VERSION=v0.0.2 make push.terraform-external.multiarch).
+push.terraform-external.multiarch: build.terraform-external.multiarch.linux
+	@$(MAKE) xpkg.release.publish.ghcr.io/prolixalias.provider-cloudflare
+
+push.multiarch: build.multiarch.linux
+	@$(MAKE) xpkg.release.publish.ghcr.io/prolixalias.provider-cloudflare
 
 # NOTE(hasheddan): we ensure up is installed prior to running platform-specific
 # build steps in parallel to avoid encountering an installation race condition.
@@ -252,4 +304,4 @@ crossplane.help:
 	@echo "\n$$(tput bold)Crossplane targets:$$(tput sgr0)"
 	@echo "$$CROSSPLANE_MAKE_HELP"
 
-.PHONY: submodules fallthrough help crossplane.help check-terraform-version build.init local-deploy uptest uptest-render
+.PHONY: submodules fallthrough help crossplane.help check-terraform-version build.init binfmt.install local-deploy uptest uptest-render

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -78,14 +79,13 @@ func main() {
 
 	zl := zap.New(zap.UseDevMode(*debug))
 	log := logging.NewLogrLogger(zl.WithName("provider-cloudflare"))
-	if *debug {
-		// The controller-runtime runs with a no-op logger by default. It is
-		// *very* verbose even at info level, so we only provide it a real
-		// logger when we're running in debug mode.
-		ctrl.SetLogger(zl)
-	}
+	// Always set controller-runtime logger so reconciliation/runtime errors are
+	// surfaced in pod logs (instead of only a one-time "log.SetLogger was never
+	// called" stack trace). We still keep debug mode opt-in for more verbosity.
+	ctrl.SetLogger(zl)
 
 	log.Debug("Starting", "sync-period", syncPeriod.String(), "poll-interval", pollInterval.String(), "max-reconcile-rate", *maxReconcileRate)
+	logProviderRuntimeDiagnostics(log)
 
 	cfg, err := ctrl.GetConfig()
 	kingpin.FatalIfError(err, "Cannot get API server rest config")
@@ -248,4 +248,53 @@ func canWatchCRD(ctx context.Context, mgr manager.Manager) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func logProviderRuntimeDiagnostics(log logging.Logger) {
+	tfPath := os.Getenv("TERRAFORM_NATIVE_PROVIDER_PATH")
+	providerDir := os.Getenv("PROVIDER_DIR")
+	log.Info("Runtime diagnostics", "terraform-native-provider-path", tfPath, "provider-dir", providerDir)
+	if tfPath == "" {
+		log.Info("Runtime diagnostics: TERRAFORM_NATIVE_PROVIDER_PATH is empty (native in-process mode expected)")
+		return
+	}
+	st, err := os.Stat(tfPath)
+	if err != nil {
+		log.Info("Runtime diagnostics: terraform provider path stat failed", "path", tfPath, "error", err.Error())
+		return
+	}
+	log.Info("Runtime diagnostics: terraform provider binary present", "path", tfPath, "size-bytes", st.Size(), "mode", st.Mode().String())
+	if arch, err := detectELFArch(tfPath); err != nil {
+		log.Info("Runtime diagnostics: unable to detect terraform provider ELF arch", "path", tfPath, "error", err.Error())
+	} else {
+		log.Info("Runtime diagnostics: terraform provider ELF architecture detected", "path", tfPath, "arch", arch)
+	}
+}
+
+func detectELFArch(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	h := make([]byte, 20)
+	if _, err := io.ReadFull(f, h); err != nil {
+		return "", err
+	}
+	// ELF magic.
+	if len(h) < 20 || h[0] != 0x7f || h[1] != 'E' || h[2] != 'L' || h[3] != 'F' {
+		return "", fmt.Errorf("not an ELF binary")
+	}
+	// e_machine is little-endian uint16 at bytes 18..19.
+	eMachine := uint16(h[18]) | uint16(h[19])<<8
+	switch eMachine {
+	case 0x3E:
+		return "amd64", nil
+	case 0xB7:
+		return "arm64", nil
+	default:
+		return fmt.Sprintf("unknown(0x%x)", eMachine), nil
+	}
 }

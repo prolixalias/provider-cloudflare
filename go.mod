@@ -1,6 +1,6 @@
 module github.com/prolixalias/provider-cloudflare
 
-go 1.25
+go 1.26
 
 tool golang.org/x/tools/cmd/goimports
 

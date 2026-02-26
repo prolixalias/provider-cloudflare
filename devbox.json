@@ -1,6 +1,7 @@
 {
   "packages": [
     "coreutils@latest",
+    "cosign@latest",
     "crane@latest",
     "delve@latest",
     "dive@latest",

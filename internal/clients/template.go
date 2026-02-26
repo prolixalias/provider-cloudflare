@@ -3,11 +3,16 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/crossplane/upjet/v2/pkg/terraform"
 
@@ -29,31 +34,71 @@ const (
 func TerraformSetupBuilder() terraform.SetupFn {
 	return func(ctx context.Context, client client.Client, mg resource.Managed) (terraform.Setup, error) {
 		ps := terraform.Setup{}
+		logger := ctrlLog.FromContext(ctx).WithValues(
+			"managedType", fmt.Sprintf("%T", mg),
+			"managedName", mg.GetName(),
+			"managedNamespace", mg.GetNamespace(),
+			"providerConfigRef", providerConfigRefSummary(mg),
+		)
 
 		pcSpec, err := resolveProviderConfig(ctx, client, mg)
 		if err != nil {
+			logger.Error(err, "Terraform setup failed while resolving ProviderConfig")
 			return terraform.Setup{}, errors.Wrap(err, "cannot resolve provider config")
 		}
 
 		data, err := resource.CommonCredentialExtractor(ctx, pcSpec.Credentials.Source, client, pcSpec.Credentials.CommonCredentialSelectors)
 		if err != nil {
+			logger.Error(err, "Terraform setup failed while extracting credentials", "credentialSource", pcSpec.Credentials.Source)
 			return ps, errors.Wrap(err, errExtractCredentials)
 		}
 		creds := map[string]string{}
 		if err := json.Unmarshal(data, &creds); err != nil {
+			logger.Error(err, "Terraform setup failed while unmarshalling credentials JSON", "credentialBytes", len(data))
 			return ps, errors.Wrap(err, errUnmarshalCredentials)
 		}
+		credKeys := sortedKeys(creds)
 
 		// Set Cloudflare credentials in provider configuration
 		ps.Configuration = map[string]any{}
+		ps.FrameworkProvider = getFrameworkProvider()
+		if ps.FrameworkProvider == nil {
+			err := errors.New("terraform framework provider factory returned nil")
+			logger.Error(err, "Terraform setup cannot configure framework provider", "hint", "ensure non-ci build includes terraform provider package")
+			return ps, err
+		}
+		hasToken := false
+		hasKey := false
+		hasEmail := false
 		if v, ok := creds["api_token"]; ok && v != "" {
 			ps.Configuration["api_token"] = v
+			hasToken = true
 		}
 		if v, ok := creds["api_key"]; ok && v != "" {
 			ps.Configuration["api_key"] = v
+			hasKey = true
 		}
 		if v, ok := creds["email"]; ok && v != "" {
 			ps.Configuration["email"] = v
+			hasEmail = true
+		}
+
+		// Cloudflare auth requires api_token OR api_key+email.
+		if !(hasToken || (hasKey && hasEmail)) {
+			err := errors.New("credentials must include api_token or both api_key and email")
+			logger.Error(err, "Terraform setup extracted credentials with unsupported shape", "credentialKeys", credKeys)
+			return ps, err
+		}
+
+		// Emit extra runtime context for tunnel resources, where failures are currently opaque.
+		if isTunnelManaged(mg) {
+			tfPath := os.Getenv("TERRAFORM_NATIVE_PROVIDER_PATH")
+			st, statErr := os.Stat(tfPath)
+			if statErr != nil {
+				logger.Error(statErr, "Terraform setup (tunnel): provider binary stat failed", "terraformNativeProviderPath", tfPath, "credentialKeys", credKeys)
+			} else {
+				logger.Info("Terraform setup (tunnel): provider config resolved", "terraformNativeProviderPath", tfPath, "providerBinarySizeBytes", st.Size(), "credentialKeys", credKeys)
+			}
 		}
 
 		return ps, nil
@@ -138,4 +183,40 @@ func resolveModern(ctx context.Context, crClient client.Client, mg resource.Mode
 		return nil, errors.Wrap(err, errTrackUsage)
 	}
 	return &pcSpec, nil
+}
+
+func providerConfigRefSummary(mg resource.Managed) string {
+	switch managed := mg.(type) {
+	case resource.LegacyManaged:
+		ref := managed.GetProviderConfigReference()
+		if ref == nil {
+			return "<nil>"
+		}
+		return ref.Name
+	case resource.ModernManaged:
+		ref := managed.GetProviderConfigReference()
+		if ref == nil {
+			return "<nil>"
+		}
+		if ref.Kind != "" {
+			return fmt.Sprintf("%s/%s", ref.Kind, ref.Name)
+		}
+		return ref.Name
+	default:
+		return "<unknown-managed-type>"
+	}
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func isTunnelManaged(mg resource.Managed) bool {
+	// Keep this generic so generated type package moves don't break diagnostics.
+	return strings.Contains(fmt.Sprintf("%T", mg), "TrustTunnelCloudflared")
 }

@@ -28,7 +28,13 @@ for crd in "${!crd_fields[@]}"; do
   if [ -f "$crd" ]; then
     field="${crd_fields[$crd]}"
     echo "  Fixing $crd (field: $field)"
-    yq eval -i "del(.spec.versions[].schema.openAPIV3Schema.properties.spec.x-kubernetes-validations[] | select(.message | contains(\"$field\")))" "$crd"
+    # yq v4 (mikefarah) uses: yq eval -i '...' file
+    # yq v3 (kislyuk) uses different syntax; skip if eval -i is not supported
+    if yq eval -i "del(.spec.versions[].schema.openAPIV3Schema.properties.spec.x-kubernetes-validations[] | select(.message | contains(\"$field\")))" "$crd" 2>/dev/null; then
+      : "fixed"
+    else
+      echo "  (yq fix skipped for $crd - need yq v4 for -i; CRD unchanged)"
+    fi
   fi
 done
 

@@ -35,6 +35,21 @@ Or use the [installation manifest](examples/install.yaml) and apply with `kubect
   make build
   make test
   ```
+- **Build for both linux/amd64 and linux/arm64** (e.g. for clusters that need amd64; default `make build` on Mac only produces the host’s arch):
+  ```bash
+  VERSION=v0.0.0 make build.multiarch.linux
+  ```
+  The Makefile runs `binfmt.install` first so QEMU is available for cross-arch Docker builds (e.g. amd64 on arm64). If that step fails (e.g. no `--privileged` docker), run manually: `docker run --privileged --rm tonistiigi/binfmt --install all`
+- **Build and push multiarch package to ghcr.io** (requires `docker login ghcr.io`):
+  ```bash
+  VERSION=v0.0.0 make push.multiarch
+  ```
+- **Tunnel (TrustTunnelCloudflared)** – This resource uses the Terraform Plugin Framework async connector and requires the provider image to include the Terraform provider binary. Build and push the **terraform-external** image:
+  ```bash
+  VERSION=v0.0.2 make build.terraform-external.multiarch.linux
+  VERSION=v0.0.2 make push.terraform-external.multiarch
+  ```
+  Use that tag (e.g. `v0.0.2`) in your cluster; the default `make push.multiarch` image is native (no Terraform binary) and will report "cannot retrieve framework provider" for Tunnel.
 - **Reviewable (generate, lint, test)**:
   ```bash
   make reviewable

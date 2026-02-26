@@ -1,6 +1,9 @@
 package config
 
 import (
+	"context"
+	"strings"
+
 	"github.com/crossplane/upjet/v2/pkg/config"
 )
 
@@ -46,7 +49,24 @@ var ExternalNameConfigs = map[string]config.ExternalName{
 	"cloudflare_custom_pages": config.IdentifierFromProvider,
 	"cloudflare_custom_ssl": config.IdentifierFromProvider,
 	"cloudflare_d1_database": config.IdentifierFromProvider,
-	"cloudflare_dns_record": config.IdentifierFromProvider,
+	// DNS record is framework-based and its import shape is <zone_id>/<dns_record_id>,
+	// while framework read/update calls require only dns_record_id in the id attribute.
+	// Normalize external name so any legacy/composite value (<zone>/<id>) is reduced
+	// to dns_record_id before being passed to framework operations.
+	"cloudflare_dns_record": config.NewExternalNameFrom(
+		config.FrameworkResourceWithComputedIdentifier("id", "00000000000000000000000000000000"),
+		config.WithGetIDFn(func(fn config.GetIDFn, ctx context.Context, externalName string, parameters map[string]any, terraformProviderConfig map[string]any) (string, error) {
+			id, err := fn(ctx, externalName, parameters, terraformProviderConfig)
+			if err != nil {
+				return "", err
+			}
+			if strings.Contains(id, "/") {
+				parts := strings.Split(id, "/")
+				id = parts[len(parts)-1]
+			}
+			return id, nil
+		}),
+	),
 	"cloudflare_dns_firewall": config.IdentifierFromProvider,
 	"cloudflare_dns_zone_transfers_acl": config.IdentifierFromProvider,
 	"cloudflare_dns_zone_transfers_incoming": config.IdentifierFromProvider,
@@ -171,7 +191,10 @@ var ExternalNameConfigs = map[string]config.ExternalName{
 	"cloudflare_zone_setting": config.IdentifierFromProvider,
 	"cloudflare_zone_subscription": config.IdentifierFromProvider,
 	// Zero Trust
-	"cloudflare_zero_trust_tunnel_cloudflared": config.IdentifierFromProvider,
+	// Framework resource needs a placeholder `id` for initial observe/read
+	// before the provider returns the computed identifier. Use a UUID-shaped
+	// placeholder so Cloudflare API input validation does not hard-fail.
+	"cloudflare_zero_trust_tunnel_cloudflared": config.FrameworkResourceWithComputedIdentifier("id", "00000000-0000-0000-0000-000000000000"),
 	"cloudflare_zero_trust_tunnel_cloudflared_config": config.IdentifierFromProvider,
 	"cloudflare_zero_trust_tunnel_cloudflared_route": config.IdentifierFromProvider,
 	"cloudflare_zero_trust_tunnel_cloudflared_virtual_network": config.IdentifierFromProvider,
